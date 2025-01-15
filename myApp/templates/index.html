@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Download BTC Data</title>
 </head>
-<body>
+<!-- <body>
     <h1>Download BTCUSDT Data</h1>
     <button id="download-btn">Download BTC Data</button>
     <div id="response-message"></div>
@@ -94,5 +94,102 @@
             });
         });
     </script>
+</body> -->
+<body>
+    <h1>Download Data</h1>
+    <form id="download-form">
+        <label for="pair">Select Pair:</label>
+        <select id="pair">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+        </select>
+        <label for="timeframe">Select Timeframe:</label>
+        <select id="timeframe">
+            <option value="1h">1 Hour</option>
+            <option value="4h">4 Hours</option>
+            <option value="1d">1 Day</option>
+        </select>
+        <button type="button" id="download-btn">Download Data</button>
+    </form>
+    <div id="response-message"></div>
+
+    <h1>Backtest Strategies</h1>
+    <form id="backtest-form">
+        <label for="indicator">Select Indicator:</label>
+        <select id="indicator">
+            <option value="RSI">RSI</option>
+            <option value="MACD">MACD</option>
+        </select>
+        <label for="period">Indicator Period:</label>
+        <input type="number" id="period" value="14" disabled>
+        <button type="button" id="backtest-btn">Backtest</button>
+    </form>
+    <div id="backtest-results"></div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const downloadBtn = document.getElementById("download-btn");
+            const backtestBtn = document.getElementById("backtest-btn");
+
+            // Download data event
+            downloadBtn.addEventListener("click", async (e) => {
+                console.log("submit clicked");
+                e.preventDefault();
+                const pair = document.getElementById("pair").value;
+                const timeframe = document.getElementById("timeframe").value;
+
+                console.log(" the pair picked: ", pair);
+                console.log(" the TF picked: ", timeframe);
+
+                try {
+                    const response = await fetch("/get_data/", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({ pair, timeframe }),
+                    });
+                    if (response.ok){ 
+                        console.log("Data downloaded successfully");
+                        // alert("Data downloaded successfully!");
+
+                    }
+                } catch (error) {
+                    console.error("Error downloading data:", error);
+                }
+            });
+
+            // Backtest event
+            backtestBtn.addEventListener("click", async (e) => {
+                e.preventDefault();
+                const indicator = document.getElementById("indicator").value;
+                const period = parseInt(document.getElementById("period").value, 10);
+                console.log("indicator picked: ", indicator);
+                console.log("period picked: ", period);
+                try {
+                    const response = await fetch("/backtest/", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": "{{ csrf_token }}",
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({ indicator, period }),
+                    });
+
+                    const result = await response.json();
+                    const resultsDiv = document.getElementById("backtest-results");
+
+                    if (result.success) {
+                        resultsDiv.innerHTML = "<pre>" + JSON.stringify(result.data, null, 2) + "</pre>";
+                    } else {
+                        resultsDiv.innerHTML = `<p>Error: ${result.error}</p>`;
+                    }
+                } catch (error) {
+                    console.error("Error during backtest:", error);
+                }
+            });
+        });
+    </script>
 </body>
+
 </html>
