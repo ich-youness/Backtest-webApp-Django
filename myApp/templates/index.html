@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download BTC Data</title>
+</head>
+<body>
+    <h1>Download BTCUSDT Data</h1>
+    <button id="download-btn">Download BTC Data</button>
+    <div id="response-message"></div>
+
+    <h1>Backtest RSI Strategy</h1>
+<button id="backtest-btn">Backtest RSI</button>
+<div id="backtest-results"></div>
+    <script>
+        // the first button click which is to fetch the data
+        document.addEventListener("DOMContentLoaded", function () {
+            const button = document.getElementById("download-btn");
+
+            button.addEventListener("click", async () => {
+                try {
+                    const csrfToken = "{{ csrf_token }}"; // Add CSRF token for Django
+
+                    const response = await fetch("/get_data/", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": csrfToken,
+                        },
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+
+                    // Handle file download
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    // a.download = 'BTCUSDT_data.csv';
+                    document.body.appendChild(a);
+                    // a.click();
+                    // window.URL.revokeObjectURL(url);
+
+                    alert('CSV file downloaded successfully!');
+                    console.log("CSV file downloaded successfully!");
+                } catch (error) {
+                    console.error("Error:", error);
+                    console.log("Failed to download CSV file. Please try again.");
+                    alert('Failed to download CSV file. Please try again.');
+
+                }
+            });
+
+            //the second button, for backtesting:
+            const backtestButton = document.getElementById("backtest-btn");
+
+            backtestButton.addEventListener("click", async () => {
+                try {
+                    const csrfToken = "{{ csrf_token }}";
+
+                    const response = await fetch("/backtest_rsi/", {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": csrfToken,
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            pair: "BTCUSDT",
+                            timeframe: "1h",
+                            period: 14,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+
+                    const result = await response.json();
+                    const resultsDiv = document.getElementById("backtest-results");
+
+                    if (result.success) {
+                        resultsDiv.innerHTML = "<pre>" + JSON.stringify(result.data, null, 2) + "</pre>";
+                    } else {
+                        resultsDiv.innerHTML = `<p>Error: ${result.error}</p>`;
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    alert("Failed to perform RSI backtesting. Please try again.");
+                }
+            });
+        });
+    </script>
+</body>
+</html>
